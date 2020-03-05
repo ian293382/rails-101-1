@@ -26,6 +26,7 @@ before_action :find_group_and_check_permission, only: [:edit, :update, :destroy]
    @group.user = current_user
 
    if @group.save
+    current_user.join!(@group)
     redirect_to groups_path
    else
     render :new
@@ -50,32 +51,33 @@ before_action :find_group_and_check_permission, only: [:edit, :update, :destroy]
  end
 
 
- def Join
-   @group = Group.fing(params[:id])
+ def join
+  @group = Group.find(params[:id])
 
-    if !current_user.is_member_of?(@group)
-      current_user.join!(@group)
-      flash[:notice] = "加入成功上車"
-    else
-      flasg[:warning] = "你已經在車上了"
-    end
+   if !current_user.is_member_of?(@group)
+     current_user.join!(@group)
+    flash[:notice] = "成功上車"
+   else
+      flash[:warning] = "你已經是乘客拉！"
+   end
 
     redirect_to group_path(@group)
   end
-
 
   def quit
     @group = Group.find(params[:id])
 
-      if current_user.is_member_of?(@group)
-        current_user.quit!(@group)
-        flash[:alert] = "已經下車"
-      else
-        flash[:warning] = "你還沒上車·如何下車"
-      end
-      
+   if current_user.is_member_of?(@group)
+      current_user.quit!(@group)
+     flash[:alert] = "已下車！"
+   else
+     flash[:warning] = "你都還沒上車·如何下車 XD"
+   end
+
     redirect_to group_path(@group)
-  end
+   end
+
+
 
  private
 
@@ -91,4 +93,12 @@ before_action :find_group_and_check_permission, only: [:edit, :update, :destroy]
    params.require(:group).permit(:title, :description)
  end
 
+end
+
+class Account::GroupsController < ApplicationController
+  before_action :authenticate_user!
+
+  def index
+    @groups = current_user.participated_groups
+  end
 end
